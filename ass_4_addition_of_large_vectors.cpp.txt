@@ -1,0 +1,55 @@
+#include <iostream>
+#include <vector>
+
+// CUDA kernel function for vector addition
+__global__ void vectorAddition(const float* a, const float* b, float* result, int size) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (index < size) {
+        result[index] = a[index] + b[index];
+    }
+}
+
+int main() {
+    int size = 1000000;  // Size of the vectors
+    std::vector<float> a(size, 1.0f);  // Vector a initialized with 1.0
+    std::vector<float> b(size, 2.0f);  // Vector b initialized with 2.0
+    std::vector<float> result(size);   // Result vector
+
+    // Declare device pointers
+    float* d_a;
+    float* d_b;
+    float* d_result;
+
+    // Allocate memory on the device
+    cudaMalloc(&d_a, size * sizeof(float));
+    cudaMalloc(&d_b, size * sizeof(float));
+    cudaMalloc(&d_result, size * sizeof(float));
+
+    // Copy input vectors from host to device
+    cudaMemcpy(d_a, a.data(), size * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b.data(), size * sizeof(float), cudaMemcpyHostToDevice);
+
+    // Define the grid and block sizes
+    int blockSize = 256;
+    int gridSize = (size + blockSize - 1) / blockSize;
+
+    // Launch the kernel on the GPU
+    vectorAddition<<<gridSize, blockSize>>>(d_a, d_b, d_result, size);
+
+    // Copy the result vector from device to host
+    cudaMemcpy(result.data(), d_result, size * sizeof(float), cudaMemcpyDeviceToHost);
+
+    // Print the result
+    for (int i = 0; i < size; ++i) {
+        std::cout << result[i] << " ";
+    }
+    std::cout << std::endl;
+
+    // Free device memory
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_result);
+
+    return 0;
+}

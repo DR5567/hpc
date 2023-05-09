@@ -1,0 +1,62 @@
+#include <iostream>
+#include <vector>
+
+// CUDA kernel function for matrix multiplication
+__global__ void matrixMultiplication(const float* a, const float* b, float* result, int size) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row < size && col < size) {
+        float sum = 0.0f;
+        for (int k = 0; k < size; ++k) {
+            sum += a[row * size + k] * b[k * size + col];
+        }
+        result[row * size + col] = sum;
+    }
+}
+
+int main() {
+    int size = 1000;  // Size of the matrices
+    std::vector<float> a(size * size, 1.0f);  // Matrix a initialized with 1.0
+    std::vector<float> b(size * size, 2.0f);  // Matrix b initialized with 2.0
+    std::vector<float> result(size * size);   // Result matrix
+
+    // Declare device pointers
+    float* d_a;
+    float* d_b;
+    float* d_result;
+
+    // Allocate memory on the device
+    cudaMalloc(&d_a, size * size * sizeof(float));
+    cudaMalloc(&d_b, size * size * sizeof(float));
+    cudaMalloc(&d_result, size * size * sizeof(float));
+
+    // Copy input matrices from host to device
+    cudaMemcpy(d_a, a.data(), size * size * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b.data(), size * size * sizeof(float), cudaMemcpyHostToDevice);
+
+    // Define the block and grid sizes
+    dim3 blockSize(16, 16);
+    dim3 gridSize((size + blockSize.x - 1) / blockSize.x, (size + blockSize.y - 1) / blockSize.y);
+
+    // Launch the kernel on the GPU
+    matrixMultiplication<<<gridSize, blockSize>>>(d_a, d_b, d_result, size);
+
+    // Copy the result matrix from device to host
+    cudaMemcpy(result.data(), d_result, size * size * sizeof(float), cudaMemcpyDeviceToHost);
+
+    // Print the result (Optional)
+    // for (int i = 0; i < size; ++i) {
+    //     for (int j = 0; j < size; ++j) {
+    //         std::cout << result[i * size + j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // Free device memory
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_result);
+
+    return 0;
+}

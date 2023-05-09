@@ -1,0 +1,70 @@
+#include <iostream>
+#include<vector>
+#include<omp.h>
+#include<climits>
+// #include<bits/stdc++.h>
+using namespace std;
+void max_reduction(vector<int>arr){
+    int n = arr.size();
+    int max_value = INT_MIN; // max_val is initialized to the minimum integer value 
+    #pragma omp parallel for reduction(max: max_value)
+    // max_value is updated within the loop using the reduction(max:max_val) clause. The reduction operation is performed in parallel using OpenMP directives.
+    for(int i=0; i<n; i++){
+        if(arr[i] > max_value){
+            max_value = arr[i];
+        }
+    }
+    cout<< "Maximum Value: " << max_value << "\n"; // the maximum value output
+}
+
+void min_reduction(vector<int>arr){
+    int n = arr.size();
+    int min_value = INT_MAX; // // min_val is initialized to the maximum integer value 
+    #pragma omp parallel for reduction(min: min_value)
+    // min_value is updated within the loop using the reduction(min:min_val) clause. The reduction operation is performed in parallel using OpenMP directives.
+    for(int i=0; i<n; i++){
+        if(arr[i] < min_value){
+            min_value = arr[i];
+        }
+    }
+    cout<< "Minimum Value: " << min_value << "\n"; // // the maximum value output
+}
+void sum_reduction(vector<int>arr){
+    int n = arr.size();
+    int sum = 0; // for calculating total sum
+    #pragma omp parallel for reduction(+: sum)
+     // sum is updated within the loop using the reduction(+: sum) clause. The reduction operation is performed in parallel using OpenMP directives.
+    for(int i=0; i<n; i++){
+        sum += arr[i];
+    }
+    cout<< "Sum Value: " << sum << "\n"; // the sum value output
+}
+
+void average_reduction(vector<int>arr){
+    int count = 0; // counting the total number of elements in array
+    int sum = 0; // for calculating total sum
+    #pragma omp parallel for reduction(+: sum)
+    // this is similar to previous code as we just need to calculate count as well and divide sum by it to calculate average
+    for(int i=0; i<arr.size(); i++){
+        sum += arr[i];
+        count++;
+    }
+    // the average is detemined by total sum / count
+    cout<< "Average Value: " << (double)sum / count << "\n"; // the Average value output
+}
+
+
+int main() {
+    int n;
+    cin>> n;
+    vector<int>arr(n);
+    for(int i=0; i<n; i++){
+        cin>> arr[i];
+    }
+    min_reduction(arr);
+    max_reduction(arr);
+    sum_reduction(arr);
+    average_reduction(arr);
+
+    return 0;
+}
